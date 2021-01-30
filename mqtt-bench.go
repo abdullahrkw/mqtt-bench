@@ -1,7 +1,8 @@
 package main
 
 import (
-	"bytes"
+	 b64 "encoding/base64"
+//	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
@@ -166,8 +167,8 @@ func PublishAllClient(clients []MQTT.Client, opts ExecOptions, param ...string) 
 			defer wg.Done()
 
 			for index := 0; index < opts.Count; index++ {
-				topic := fmt.Sprintf(opts.Topic+"/%d", clientId)
-
+				//topic := fmt.Sprintf(opts.Topic+"/%d", clientId)
+                                topic:= fmt.Sprintf(opts.Topic)
 				if Debug {
 					fmt.Printf("Publish : id=%d, count=%d, topic=%s\n", clientId, index, topic)
 				}
@@ -188,7 +189,8 @@ func PublishAllClient(clients []MQTT.Client, opts ExecOptions, param ...string) 
 
 // メッセージを送信する。
 func Publish(client MQTT.Client, topic string, qos byte, retain bool, message string) {
-	token := client.Publish(topic, qos, retain, message)
+	newMessage := CreateFixedSizeMessage(10000)
+	token := client.Publish(topic, qos, retain, newMessage)
 
 	if token.Wait() && token.Error() != nil {
 		fmt.Printf("Publish error: %s\n", token.Error())
@@ -279,14 +281,26 @@ func Subscribe(client MQTT.Client, topic string, qos byte) *SubscribeResult {
 	return result
 }
 
+func check(e error) {
+    if e != nil {
+        panic(e)
+    }
+}
+
 // 固定サイズのメッセージを生成する。
 func CreateFixedSizeMessage(size int) string {
-	var buffer bytes.Buffer
-	for i := 0; i < size; i++ {
-		buffer.WriteString(strconv.Itoa(i % 10))
-	}
+//	var buffer bytes.Buffer
+//	for i := 0; i < size; i++ {
+//		buffer.WriteString(strconv.Itoa(i % 10))
+//	}
+//
+//	message := buffer.String()
+	dat, err := ioutil.ReadFile("./1610120402_recording.tar.gz")
+	check(err)
+	err2 := ioutil.WriteFile("./load-test-data.tar.gz",[]byte(dat), 0644)
+    	check(err2)
+	message := b64.StdEncoding.EncodeToString([]byte(string(dat)))
 
-	message := buffer.String()
 	return message
 }
 
